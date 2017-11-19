@@ -1,4 +1,5 @@
 import datetime
+import pytz
 from bravado.exception import HTTPForbidden
 
 from config import *
@@ -11,17 +12,20 @@ def check_citadels():
     """
     corporation_id = name_to_id(CORPORATION_NAME, 'corporation')
     structures = esi_api('Corporation.get_corporations_corporation_id_structures', token=access_token, corporation_id=corporation_id)
-    now = datetime.datetime.utcnow().date()
+    detonations = esi_api('Industry.get_corporation_corporation_id_mining_extractions', token=access_token, corporation_id=corporation_id)
+    detonations = {d['structure_id']: d for d in detonations}
+    now = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
     too_soon = datetime.timedelta(days=TOO_SOON)
     messages = []
     for structure in structures:
-        message = ''
+        structure_id = structure['structure_id']
+        message = []
 
         # Grab structure name
         try:
-            structure_info = esi_api('Universe.get_universe_structures_structure_id', token=access_token, structure_id=structure['structure_id'])
+            structure_info = esi_api('Universe.get_universe_structures_structure_id', token=access_token, structure_id=structure_id)
         except HTTPForbidden, e:
-            messages.append('Found a citadel ({}) in {} that doesn\'t allow {} to dock!'.format(structure['structure_id'],
+            messages.append('Found a citadel ({}) in {} that doesn\'t allow {} to dock!'.format(structure_id,
                                                                                                 structure['system_id'],
                                                                                                 CORPORATION_NAME))
             continue
@@ -41,15 +45,23 @@ def check_citadels():
         # Check when fuel expires
         fuel_expires = structure.get('fuel_expires', None)
 
+        # Check for upcoming detonations
+        try:
+            detonation = detonations[structure_id]['chunk_arrival_time']
+            if detonation - now < too_soon:
+                message.append('Ready to detonate {}'.format(detonation))
+        except KeyError:
+            pass
+
         # Build message for fuel running out and offline services 
-        if fuel_expires and (fuel_expires - now < too_soon):
-            message += "{} runs out of fuel on {}".format(name, fuel_expires)
+        if fuel_expires and (fuel_expires - now.date() < too_soon):
+            message.append('Runs out of fuel on {}'.format(fuel_expires))
             if online_services:
-                message += '\nOnline Services: {}'.format(online)
+                message.append('Online Services: {}'.format(online))
             if offline_services:
-                message += '\nOffline Services: {}'.format(offline)
+                message.append('Offline Services: {}'.format(offline))
         elif offline_services:
-            message = '{} has offline services: {}'.format(name, offline)
+            message.append('Offline services: {}'.format(offline))
         if message:
-            messages.append(message)
+            messages.append('\n'.join(['{}'.format(name)] + message))
     return messages

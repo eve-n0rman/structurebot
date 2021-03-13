@@ -6,6 +6,7 @@ import logging
 from .config import CONFIG
 from .util import esi, esi_client, name_to_id, ids_to_names
 from .assets import Fitting, Asset, Type
+from .universe import System
 import six
 
 

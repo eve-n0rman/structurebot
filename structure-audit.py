@@ -41,6 +41,7 @@ if __name__ == '__main__':
             'needs_core',
             'unanchoring',
             'profile_id',
+            'packaged_volume',
             'system_name',
             'constellation_name',
             'region_name'

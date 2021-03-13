@@ -103,3 +103,9 @@ class TestAssets(unittest.TestCase):
     def test_fitting_bad_compare(self):
         with pytest.raises(NotImplementedError):
             self.fittings[0] == 'not a fitting'
+
+    def test_fitting_volume(self):
+        self.assertEqual(self.fittings[0].packaged_volume, 4000)
+        self.assertEqual(self.fittings[1].packaged_volume, 8000)
+        self.assertEqual(self.fittings[2].packaged_volume, 6000)
+        self.assertEqual(self.fittings[3].packaged_volume, 8000)

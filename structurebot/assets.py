@@ -178,7 +178,7 @@ class BaseType(object):
                  group=None, market_group_id=None, radius=None, volume=None,
                  packaged_volume=None, icon_id=None, capacity=None,
                  portion_size=None, mass=None, graphic_id=None,
-                 dogma_attributes=[], dogma_effects=[]):
+                 dogma_attributes=[], dogma_effects=[], **kwargs):
         super(BaseType, self).__init__()
         self.type_id = type_id
         self.name = name
@@ -196,7 +196,9 @@ class BaseType(object):
         self.mass = mass
         self.graphic_id = graphic_id
         self.dogma_attributes = dogma_attributes
+        self.attributes = {a['attribute_id']: a['value'] for a in dogma_attributes}
         self.dogma_effects = dogma_effects
+        self.effects = {e['effect_id']: e['is_default'] for e in dogma_effects}
 
     @classmethod
     def from_id(cls, id):
@@ -379,11 +381,11 @@ class Fitting(object):
 
     slots = ['Cargo', 'DroneBay', 'FighterBay', 'FighterTube', 'HiSlot',
              'LoSlot', 'MedSlot', 'RigSlot', 'ServiceSlot', 'SubSystemSlot',
-             'QuantumCoreRoom']
+             'StructureFuel', 'QuantumCoreRoom']
 
     def __init__(self, Cargo=[], DroneBay=[], FighterBay=[], FighterTube=[],
                  HiSlot=[], LoSlot=[], MedSlot=[], RigSlot=[], ServiceSlot=[],
-                 SubSystemSlot=[], QuantumCoreRoom=[]):
+                 SubSystemSlot=[], StructureFuel=[], QuantumCoreRoom=[]):
         super(Fitting, self).__init__()
         self.Cargo = Cargo
         self.DroneBay = DroneBay
@@ -395,6 +397,7 @@ class Fitting(object):
         self.RigSlot = RigSlot
         self.ServiceSlot = ServiceSlot
         self.SubSystemSlot = SubSystemSlot
+        self.StructureFuel = StructureFuel
         self.QuantumCoreRoom = QuantumCoreRoom
 
     @classmethod
@@ -406,6 +409,9 @@ class Fitting(object):
                 continue
             for slot in Fitting.slots:
                 if flag.startswith(slot):
+                    if flag.startswith('FighterTube'):
+                        # Fighter tubes report squadrons, which consist of variable quantities
+                        asset.quantity = int(asset.attributes.get(2215, 1))
                     fittings[slot].append(asset)
                     fit = True
         return cls(**fittings)
@@ -416,6 +422,14 @@ class Fitting(object):
         if asset.quantity > 1:
             name += ' ({})'.format(asset.quantity)
         return name
+
+    @property
+    def packaged_volume(self):
+        volume = 0
+        for slot in self.slots:
+            for item in getattr(self, slot):
+                volume += item.packaged_volume * item.quantity
+        return volume
 
     def _compare(self, other):
         """Generates a Counter of items in self minus items in other

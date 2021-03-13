@@ -64,6 +64,10 @@ class Structure(object):
                     self.offline_services.append(service.get('name'))
 
     @property
+    def packaged_volume(self):
+        return self.type.packaged_volume + self.fitting.packaged_volume
+
+    @property
     def fuel_rate(self):
         if self._fuel_rate:
             return self._fuel_rate

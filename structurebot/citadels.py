@@ -25,6 +25,10 @@ class Structure(object):
         self.type = Type.from_id(type_id)
         self.type_name = type_name or self.type.name
         self.system_id = system_id
+        self.system = System.from_id(self.system_id)
+        self.system_name = self.system.name
+        self.constellation_name = self.system.constellation.name
+        self.region_name = self.system.constellation.region.name
         self.fuel = fuel
         self.fuel_expires = getattr(fuel_expires, 'v', None)
         self.accessible = accessible

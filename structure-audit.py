@@ -40,7 +40,10 @@ if __name__ == '__main__':
             'jump_fuel',
             'needs_core',
             'unanchoring',
-            'profile_id'
+            'profile_id',
+            'system_name',
+            'constellation_name',
+            'region_name'
         ]
         writer = csv.writer(sys.stdout)
         writer.writerow(columns)
